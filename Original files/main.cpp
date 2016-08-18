@@ -203,7 +203,7 @@ int main(int argc, char * argv[])
 	}
 	else if(inmarkers.size() == 1)
 	{
-		cout<<"only one input marekr"<<endl;
+		cout<<"only one input marker"<<endl;
 		if(is_gsdt) 
 		{
 			if(phi == 0)
