@@ -1,8 +1,11 @@
 import argparse
+from scipy import ndimage	
 
+import numpy as np
 from utils.io import *
-from utils.heap import *
+from fast_marching import *
 import skfmm
+np.set_printoptions(threshold=np.inf)
 
 def main():
 	parser = argparse.ArgumentParser(description='Arguments for see anisotropic filters.')
@@ -29,7 +32,7 @@ def main():
 
 
     # for testing using file name, need to change to args later
-	img = loadimg('test/1.tif')
+	img = loadimg('test/1resampled.tif')
     
     # Distance Transform
 	if args.trace:
@@ -42,11 +45,22 @@ def main():
 			args.soma_threshold = filters.threshold_otsu(img)
 
 		if not args.silence: 
-			print('--DT to get soma location with threshold:', args.soma_threshold)
+			print('--DT to get soma location with threshold: ', args.soma_threshold)
 		
+		# print(np.where(img > 0))
 		# segment image
 		bimg = (img > args.soma_threshold).astype('int')
+		print('--original img')
+		# print(img,img.shape)
+		print('--segment img')
+		# print(bimg,bimg.shape)
+
+		print('--DT')
+		ndimage.distance_transform_edt(img)
+		print([np.where(bimg > 0)])
+		# print(bimg)
 		
+
 		# # boundary Distance Transform
 		# if not args.silence: 
 		# 	print('--Boundary DT...')
