@@ -56,7 +56,7 @@ def main():
 		# print(bimg,bimg.shape)
 
 		print('--DT')
-		ndimage.distance_transform_edt(img)
+		dtimg = ndimage.distance_transform_edt(img)
 		print([np.where(bimg > 0)])
 		# print(bimg)
 		
