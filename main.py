@@ -33,7 +33,14 @@ def main():
 
     # for testing using file name, need to change to args later
 	img = loadimg('test/1resampled.tif')
-    
+	print('--input image size: ', img.shape)
+	print(img)
+	size = img.shape
+	average_intensity = np.sum(img) / (size[0] * size[1] * size[2])
+	print('--average internsity: ',average_intensity)
+	dtimg = (img > average_intensity)
+	print(dtimg)
+
     # Distance Transform
 	if args.trace:
 		# get soma location
@@ -56,9 +63,27 @@ def main():
 		# print(bimg,bimg.shape)
 
 		print('--DT')
-		dtimg = ndimage.distance_transform_edt(img)
-		print([np.where(bimg > 0)])
-		# print(bimg)
+		dtimg = ndimage.distance_transform_edt(dtimg)
+		# print([np.where(bimg > 0)])
+		print(bimg[9])
+		print(dtimg[9])
+
+		vertices = []
+		index = 0
+		print('--FM')
+		for i in range (size[0]):
+			for j in range (size[1]):
+				for k in range (size[2]):
+					flag = 'FAR'
+					if bimg[i][j][k] == 1:
+						flag = 'ALIVE'
+					element = vertex(index, i, j, k, dtimg[i][j][k], img[i][j][k], flag)
+					vertices.append(element)
+
+		# for i in vertices:
+			# if i.state != 'FAR':
+			# if i.dt != 1 and i.dt != 0:
+				# print(i.ind, i.x, i.y, i.z, i.dt, i.intensity, i.state)
 		
 
 		# # boundary Distance Transform
