@@ -34,12 +34,11 @@ def main():
     # for testing using file name, need to change to args later
 	img = loadimg('test/1resampled.tif')
 	print('--input image size: ', img.shape)
-	print(img)
+	# print(img)
 	size = img.shape
 	average_intensity = np.sum(img) / (size[0] * size[1] * size[2])
 	print('--average internsity: ',average_intensity)
-	dtimg = (img > average_intensity)
-	print(dtimg)
+	dtimg = (img > average_intensity).astype('int')
 
     # Distance Transform
 	if args.trace:
@@ -63,10 +62,12 @@ def main():
 		# print(bimg,bimg.shape)
 
 		print('--DT')
-		dtimg = ndimage.distance_transform_edt(dtimg)
+		result_dt = ndimage.morphology.distance_transform_edt(dtimg,sampling=[1,1,1])
 		# print([np.where(bimg > 0)])
-		print(bimg[9])
-		print(dtimg[9])
+		print('--bimg')
+		print(dtimg[30])
+		print('--DT result')
+		print(result_dt[30])
 
 		vertices = []
 		index = 0
@@ -79,6 +80,11 @@ def main():
 						flag = 'ALIVE'
 					element = vertex(index, i, j, k, dtimg[i][j][k], img[i][j][k], flag)
 					vertices.append(element)
+
+		print('--Vertex dt')
+		for i in vertices:
+			if i.dt != 0 and i.dt != 1:
+				print(i.dt)
 
 		# for i in vertices:
 			# if i.state != 'FAR':

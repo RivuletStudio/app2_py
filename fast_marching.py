@@ -12,6 +12,11 @@ class vertex():
 		self.dt= _dt
 		self.intensity = _intensity
 		self.state = _state
+		self.neighbours = []
+
+	def add_neighbours(vertex_a,vertex_b):
+		vertex_a.neighbours.append(vertex_b)
+		vertex_b.neighbours.append(vertex_a)
 
 	def euc_distance(self,vertex_a,vertex_b):
 		distance = np.linalg.norm(vertex_a-vertex_b)
@@ -19,7 +24,7 @@ class vertex():
 
 	def geodesic_distance(self,intensity_max,vertex):
 		# this 10 can be set up as a parameter
-		math.exp(10 * (1-vetex))
+		return math.exp(10 * ((1-vetex.intensity/intensity_max) ** 2))
 
 
 
