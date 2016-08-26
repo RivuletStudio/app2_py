@@ -3,7 +3,7 @@ from scipy import ndimage
 
 import numpy as np
 from utils.io import *
-from fast_marching import *
+from fm import *
 import skfmm
 np.set_printoptions(threshold=np.inf)
 
@@ -62,30 +62,24 @@ def main():
 		# print(bimg,bimg.shape)
 
 		print('--DT')
-		result_dt = ndimage.morphology.distance_transform_edt(dtimg,sampling=[1,1,1])
+		result_dt = ndimage.distance_transform_edt(dtimg,sampling=[1,1,1])
 		# print([np.where(bimg > 0)])
 		print('--bimg')
 		print(dtimg[30])
 		print('--DT result')
 		print(result_dt[30])
 
-		vertices = []
-		index = 0
 		print('--FM')
-		for i in range (size[0]):
-			for j in range (size[1]):
-				for k in range (size[2]):
-					flag = 'FAR'
-					if bimg[i][j][k] == 1:
-						flag = 'ALIVE'
-					element = vertex(index, i, j, k, dtimg[i][j][k], img[i][j][k], flag)
-					vertices.append(element)
+		vertices = initailize(size,img,dtimg,bimg)
+
+		print(type(vertices))
+
 
 		print('--Vertex dt')
 		for i in vertices:
-			if i.dt != 0 and i.dt != 1:
-				print(i.dt)
-
+			if i.dt != 1 and i.dt != 0:
+				print(i.ind, i.x, i.y, i.z, i.dt, i.intensity, i.state)
+		
 		# for i in vertices:
 			# if i.state != 'FAR':
 			# if i.dt != 1 and i.dt != 0:

@@ -4,11 +4,11 @@ import math
 
 
 class vertex():
-	def __init__(self,_ind,_x,_y,_z,_dt,_intensity,_state):
+	def __init__(self,_ind,_w,_h,_d,_dt,_intensity,_state):
 		self.ind = _ind
-		self.x = _x
-		self.y = _y
-		self.z = _z
+		self.w = _w
+		self.h = _h
+		self.d = _d
 		self.dt= _dt
 		self.intensity = _intensity
 		self.state = _state
@@ -27,15 +27,17 @@ class vertex():
 		return math.exp(10 * ((1-_vertex.intensity/intensity_max) ** 2))
 
 
-def initailize(self,vertices,size,bimg):
+# initialize the fast marching tree
+def initialize(size,img,dtimg,bimg):
+	vertices = []
 	index = 0
-	for i in range (size[0]):
-		for j in range (size[1]):
-			for k in range (size[2]):
+	for w in range (size[0]):
+		for h in range (size[1]):
+			for d in range (size[2]):
 				flag = 'FAR'
 				if bimg[i][j][k] == 1:
 					flag = 'ALIVE'
-				element = vertex(index, i, j, k, dtimg[i][j][k], img[i][j][k], flag)
+				element = vertex(index, w, h, d, dtimg[i][j][k], img[i][j][k], flag)
 				vertices.append(element)
 
 	for i in np.where(bimg == 1):
@@ -44,14 +46,20 @@ def initailize(self,vertices,size,bimg):
 			
 	return vertices
 
-def get_neighbours(self,_vertex,size):
+def get_neighbours(vertices,vertex,size):
 	neighbours = []
-	x = _vertex.x
-	y = _vertex.y
-	z = _vertex.z
+	w = vertex.w
+	h = vertex.h
+	d = vertex.d
+
+	if (x-1 >= 0):
+		vertex.neighbours.append(vertices[w*size[0]+h*size[1]+d*size[2]])
+	if (x+1 <= size[0]-1):
+		vertex.neighbours.append
 
 
-def set_trial_set(self,vertices):
+
+def set_trial_set(vertices):
 	for i in vertices:
 		if i.state == 'ALIVE':
 			pass
