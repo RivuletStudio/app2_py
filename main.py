@@ -32,7 +32,7 @@ def main():
 
 
     # for testing using file name, need to change to args later
-	img = loadimg('test/1resampled.tif')
+	img = loadimg('test/1resampled_2.tif')
 	print('--input image size: ', img.shape)
 	# print(img)
 	size = img.shape
@@ -62,23 +62,45 @@ def main():
 		# print(bimg,bimg.shape)
 
 		print('--DT')
-		result_dt = ndimage.distance_transform_edt(dtimg,sampling=[1,1,1])
+		dt_result = ndimage.distance_transform_edt(dtimg,sampling=[1,1,1])
 		# print([np.where(bimg > 0)])
-		print('--bimg')
-		print(dtimg[30])
-		print('--DT result')
-		print(result_dt[30])
+		# print('--bimg')
+		# print(dtimg[25])
+		# print('--DT result')
+		# print(dt_result[25])
+		# print([np.where(dt_result > 1)])
 
 		print('--FM')
-		vertices = initailize(size,img,dtimg,bimg)
+		vertices = initialize(size,img,dt_result,bimg)
 
-		print(type(vertices))
+		print('--shape')
+		print(vertices.shape)
+
+		
+		################    test number of neighbours      #####################
+		# neighbours = get_neighbours(vertices,size[0]-1,size[1]-1,size[2]-1,size)
+		# count = 0
+		# for i in neighbours:
+		# 	if i is not None:
+		# 		count+=1
+		# print('--number of neighbours: ')
+		# print(count)
+		
+		print('--Find trial set')
+		trials = find_trial_set(vertices, size)
+		trial_set = np.array(trials)
+
+		for i in trial_set:
+			print(i.w, i.h, i.d,i.dt,i.state)
 
 
-		print('--Vertex dt')
-		for i in vertices:
-			if i.dt != 1 and i.dt != 0:
-				print(i.ind, i.x, i.y, i.z, i.dt, i.intensity, i.state)
+
+		# print('--Vertex dt')
+		# for i in range (size[0]):
+		# 	for j in range (size[1]):
+		# 		for k in range (size[2]):
+		# 			if (vertices[i][j][k].dt != 0 and vertices[i][j][k].dt != 1):
+		# 				print(vertices[i][j][k].dt)
 		
 		# for i in vertices:
 			# if i.state != 'FAR':

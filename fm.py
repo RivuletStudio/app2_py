@@ -4,62 +4,78 @@ import math
 
 
 class vertex():
-	def __init__(self,_ind,_w,_h,_d,_dt,_intensity,_state):
-		self.ind = _ind
+	def __init__(self,_w,_h,_d,_dt,_intensity,_state):
 		self.w = _w
 		self.h = _h
 		self.d = _d
 		self.dt= _dt
 		self.intensity = _intensity
 		self.state = _state
+		self.parent = self
 		self.neighbours = []
 
-	def add_neighbours(vertex_a,vertex_b):
-		vertex_a.neighbours.append(vertex_b)
-		vertex_b.neighbours.append(vertex_a)
+	def add_neighbours(self,vertex):
+		self.neighbours.append(vertex)
+		vertex.neighbours.append(self)
 
-	def euc_distance(self,vertex_a,vertex_b):
-		distance = np.linalg.norm(vertex_a-vertex_b)
+	def euc_distance(self,vertex):
+		distance = math.sqrt((self.w-vertex.w) ** 2 + (self.h-vertex.h) ** 2 + (self.d-vertex.d) ** 2)
 		return distance
 
-	def geodesic_distance(self,intensity_max,_vertex):
+	def geodesic_distance(self,intensity_max,vertex):
 		# this 10 can be set up as a parameter
-		return math.exp(10 * ((1-_vertex.intensity/intensity_max) ** 2))
+		return math.exp(10 * ((1-vertex.intensity/intensity_max) ** 2))
+
+	# def edge_distance(self,)
 
 
 # initialize the fast marching tree
 def initialize(size,img,dtimg,bimg):
-	vertices = []
-	index = 0
+	vertices = np.empty((size[0],size[1],size[2]),dtype=vertex)
 	for w in range (size[0]):
 		for h in range (size[1]):
 			for d in range (size[2]):
-				flag = 'FAR'
-				if bimg[i][j][k] == 1:
-					flag = 'ALIVE'
-				element = vertex(index, w, h, d, dtimg[i][j][k], img[i][j][k], flag)
-				vertices.append(element)
+				state = 'FAR'
+				# print(index)
+				if bimg[w][h][d] == 1:
+					state = 'ALIVE'
+				element = vertex(w, h, d, dtimg[w][h][d], img[w][h][d], state)
+				vertices[w][h][d] = element
 
-	for i in np.where(bimg == 1):
-		print('--soma location')
-		print(i)
-			
+
 	return vertices
 
-def get_neighbours(vertices,vertex,size):
-	neighbours = []
-	w = vertex.w
-	h = vertex.h
-	d = vertex.d
+def find_trial_set(vertices,size):
+	trial_set = []
+	count = 0
+	for w in range (size[0]):
+		for h in range (size[1]):
+			for d in range (size[2]):
+				if vertices[w][h][d].state == 'ALIVE':
+					neighbours = get_neighbours(vertices,w,h,d,size) 
+					for i in neighbours:
+						if i.state == 'FAR':
+							i.state = 'TRIAL'
+							trial_set.append(i)
+							count+=1
+	print(count)
+	return trial_set
 
-	if (x-1 >= 0):
-		vertex.neighbours.append(vertices[w*size[0]+h*size[1]+d*size[2]])
-	if (x+1 <= size[0]-1):
-		vertex.neighbours.append
+def get_neighbours(vertices,w,h,d,size):
+	neighbours = np.empty(6,dtype=vertex)
+	if (w-1) >= 0:
+		neighbours[0] = vertices[w-1][h][d]
+	if (w+1) < size[0]:
+		neighbours[1] = vertices[w+1][h][d]
 
+	if (h-1) >= 0:
+		neighbours[2] = vertices[w][h-1][d]
+	if (h+1) < size[1]:
+		neighbours[3] = vertices[w][h+1][d]
 
+	if (d-1) >= 0:
+		neighbours[4] = vertices[w][h][d-1]
+	if (d+1) < size[2]:
+		neighbours[5] = vertices[w][h][d+1]
 
-def set_trial_set(vertices):
-	for i in vertices:
-		if i.state == 'ALIVE':
-			pass
+	return neighbours
