@@ -32,43 +32,70 @@ def main():
 
 
     # for testing using file name, need to change to args later
-	img = loadimg('test/1resampled_2.tif')
-	print('--input image size: ', img.shape)
+	img = loadimg('test/3.tif')
 	# print(img)
 	size = img.shape
-	average_intensity = np.sum(img) / (size[0] * size[1] * size[2])
-	print('--average internsity: ',average_intensity)
-	dtimg = (img > average_intensity).astype('int')
+	print('--input image size: ', size)
 
     # Distance Transform
 	if args.trace:
 		# get soma location
-		if args.soma_threshold < 0:
-			try:
-				from skimage import filters
-			except ImportError:
-				from skimage import filter as filters
-			args.soma_threshold = filters.threshold_otsu(img)
+		# if args.soma_threshold < 0:
+		# 	try:
+		# 		from skimage import filters
+		# 	except ImportError:
+		# 		from skimage import filter as filters
+		# 	args.soma_threshold = filters.threshold_otsu(img)
 
-		if not args.silence: 
-			print('--DT to get soma location with threshold: ', args.soma_threshold)
+		# if not args.silence: 
+		# 	print('--DT to get soma location with threshold: ', args.soma_threshold)
 		
 		# print(np.where(img > 0))
 		# segment image
-		bimg = (img > args.soma_threshold).astype('int')
 		print('--original img')
 		# print(img,img.shape)
 		print('--segment img')
 		# print(bimg,bimg.shape)
 
 		print('--DT')
-		dt_result = ndimage.distance_transform_edt(dtimg,sampling=[1,1,1])
-		# print([np.where(bimg > 0)])
+		intensity = find_intensity(img,size)
+		average_intensity = intensity[0]
+		max_intensity = intensity[1]	
+		# average_intensity = np.sum(img) / (size[0] * size[1] * size[2])
+		print('--Max intensity',max_intensity)
+		print('--average intensity: ',average_intensity)
+		bimg = (img > args.threshold).astype('int')
+		dt_result = skfmm.distance(bimg, dx=1)
+		# dt_result = ndimage.distance_transform_edt(bimg,sampling=[1,1,1])
+
+		print('--dt result size: ', dt_result.shape)
+
+		# print(bimg[np.where(bimg == 1)])
 		# print('--bimg')
-		# print(dtimg[25])
-		# print('--DT result')
-		# print(dt_result[25])
-		# print([np.where(dt_result > 1)])
+		# print(bimg[36][30][6])
+		count = 0
+		print('--DT result')
+		max_dt = 0
+		max_w = 0
+		max_h = 0
+		max_d = 0
+		# print(dt_result[57])
+		for w in range (size[0]):
+			for h in range (size[1]):
+				for d in range (size[2]):
+					if 	dt_result[w][h][d] > max_dt :
+						max_dt = dt_result[w][h][d]
+						max_w = w
+						max_h = h
+						max_d = d
+						# print('dt value ',dt_result[w][h][d])
+						# count+=1
+		print(dt_result[145][83][5])
+		print(img[86][62][6])
+		print('max_index: ',max_w,max_h,max_d,max_dt,img[max_w][max_h][max_d])
+		# print('count: ',count)
+		# max_index = np.argmax(dt_result)
+		# print('max_index', max_index, dt_result[max_index])
 
 		print('--FM')
 		vertices = initialize(size,img,dt_result,bimg)
@@ -87,47 +114,18 @@ def main():
 		# print(count)
 		
 		print('--Find trial set')
-		trials = find_trial_set(vertices, size)
+		trials = find_trial_set(vertices,max_w,max_h,max_d,size)
 		trial_set = np.array(trials)
 
+		print(len(trial_set))
 		for i in trial_set:
-			print(i.w, i.h, i.d,i.dt,i.state)
+			print(i.w, i.h,i.d,i.dt,i.state)
+
+		print('--Initial reconstruction')
+		update_distance(vertices, trial_set, max_intensity, size)
 
 
 
-		# print('--Vertex dt')
-		# for i in range (size[0]):
-		# 	for j in range (size[1]):
-		# 		for k in range (size[2]):
-		# 			if (vertices[i][j][k].dt != 0 and vertices[i][j][k].dt != 1):
-		# 				print(vertices[i][j][k].dt)
-		
-		# for i in vertices:
-			# if i.state != 'FAR':
-			# if i.dt != 1 and i.dt != 0:
-				# print(i.ind, i.x, i.y, i.z, i.dt, i.intensity, i.state)
-		
-
-		# # boundary Distance Transform
-		# if not args.silence: 
-		# 	print('--Boundary DT...')
-		# dt = skfmm.distance(bimg,dx=1)
-		# print(dt.shape)
-		# print(dt)
-
-
-
-		# dtmax = dt.max()
-		# print('DT max: ',dtmax)
-		# maxdpt = np.asarray(np.unravel_index(dt.argmax(), dt.shape))
-		# marchmap = np.ones(img.shape)
-		# marchmap[maxdpt[0], maxdpt[1], maxdpt[2]] = -1
-
-		# # Fast Marching
-		# if not args.silence:
-		# 	print('--Fast Marching...')
-		# t = skfmm.travel_time(marchmap, makespeed(dt), dx=5e-3)
-		# # print(t)
 
 		if not args.silence:
 			print('--Hierarchy Prune')
