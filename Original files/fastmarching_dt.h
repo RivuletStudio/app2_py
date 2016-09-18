@@ -390,6 +390,7 @@ template<class T> bool fastmarching_dt_tree(T * inimg1d, vector<MyMarker*> &outt
 	//int cnn_type = 3;  // ?
 
 	float * phi = new float[tol_sz]; 
+	// initialize parent to be the vertex itself
 	long * parent = new long[tol_sz]; for(long ind = 0; ind < tol_sz; ind++) parent[ind] = ind;
 	char * state = new char[tol_sz];
 	int bkg_count = 0;                          // for process counting

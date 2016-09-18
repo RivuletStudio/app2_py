@@ -32,7 +32,7 @@ def main():
 
 
     # for testing using file name, need to change to args later
-	img = loadimg('test/3.tif')
+	img = loadimg('test/1resampled_2.tif')
 	# print(img)
 	size = img.shape
 	print('--input image size: ', size)
@@ -90,19 +90,18 @@ def main():
 						max_d = d
 						# print('dt value ',dt_result[w][h][d])
 						# count+=1
-		print(dt_result[145][83][5])
-		print(img[86][62][6])
+		# print(dt_result[145][83][5])
+		# print(img[86][62][6])
 		print('max_index: ',max_w,max_h,max_d,max_dt,img[max_w][max_h][max_d])
 		# print('count: ',count)
 		# max_index = np.argmax(dt_result)
 		# print('max_index', max_index, dt_result[max_index])
 
 		print('--FM')
-		vertices = initialize(size,img,dt_result,bimg)
+		# vertices = initialize(size,img,dt_result,bimg)
 
 		print('--shape')
-		print(vertices.shape)
-
+		# print(vertices.shape)
 		
 		################    test number of neighbours      #####################
 		# neighbours = get_neighbours(vertices,size[0]-1,size[1]-1,size[2]-1,size)
@@ -113,16 +112,16 @@ def main():
 		# print('--number of neighbours: ')
 		# print(count)
 		
-		print('--Find trial set')
-		trials = find_trial_set(vertices,max_w,max_h,max_d,size)
-		trial_set = np.array(trials)
+		# print('--Find trial set')
+		# trials = find_trial_set(vertices,max_w,max_h,max_d,size)
+		# trial_set = np.array(trials)
 
-		print(len(trial_set))
-		for i in trial_set:
-			print(i.w, i.h,i.d,i.dt,i.state)
+		# print(len(trial_set))
+		# for i in trial_set:
+		# 	print(i.w, i.h,i.d,i.dt,i.state)
 
 		print('--Initial reconstruction')
-		update_distance(vertices, trial_set, max_intensity, size)
+		fastmarching_dt_tree(img,bimg,dt_result,size,max_w,max_h,max_d,max_intensity)
 
 
 
