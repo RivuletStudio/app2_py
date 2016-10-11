@@ -4,6 +4,7 @@ from scipy import ndimage
 import numpy as np
 from utils.io import *
 from fm import *
+from fm_new import *
 import skfmm
 np.set_printoptions(threshold=np.inf)
 
@@ -32,7 +33,7 @@ def main():
 
 
     # for testing using file name, need to change to args later
-	img = loadimg('test/1resampled_2.tif')
+	img = loadimg('test/crop2/crop2.tif')
 	# print(img)
 	size = img.shape
 	print('--input image size: ', size)
@@ -58,12 +59,9 @@ def main():
 		# print(bimg,bimg.shape)
 
 		print('--DT')
-		intensity = find_intensity(img,size)
-		average_intensity = intensity[0]
-		max_intensity = intensity[1]	
 		# average_intensity = np.sum(img) / (size[0] * size[1] * size[2])
-		print('--Max intensity',max_intensity)
-		print('--average intensity: ',average_intensity)
+		# print('--Max intensity',max_intensity)
+		# print('--average intensity: ',average_intensity)
 		bimg = (img > args.threshold).astype('int')
 		dt_result = skfmm.distance(bimg, dx=1)
 		# dt_result = ndimage.distance_transform_edt(bimg,sampling=[1,1,1])
@@ -75,33 +73,23 @@ def main():
 		# print(bimg[36][30][6])
 		count = 0
 		print('--DT result')
-		max_dt = 0
+		# print(dt_result)
+
+		max_dt1 = np.max(dt_result)
 		max_w = 0
 		max_h = 0
 		max_d = 0
-		# print(dt_result[57])
-		for w in range (size[0]):
-			for h in range (size[1]):
-				for d in range (size[2]):
-					if 	dt_result[w][h][d] > max_dt :
+		max_dt = 0
+		for w in range(size[0]):
+			for h in range(size[1]):
+				for d in range(size[2]):
+					if dt_result[w][h][d] > max_dt:
 						max_dt = dt_result[w][h][d]
 						max_w = w
 						max_h = h
 						max_d = d
-						# print('dt value ',dt_result[w][h][d])
-						# count+=1
-		# print(dt_result[145][83][5])
-		# print(img[86][62][6])
-		print('max_index: ',max_w,max_h,max_d,max_dt,img[max_w][max_h][max_d])
-		# print('count: ',count)
-		# max_index = np.argmax(dt_result)
-		# print('max_index', max_index, dt_result[max_index])
 
-		print('--FM')
-		# vertices = initialize(size,img,dt_result,bimg)
-
-		print('--shape')
-		# print(vertices.shape)
+		print('--source_index', max_dt,max_dt1,max_w,max_h,max_d)
 		
 		################    test number of neighbours      #####################
 		# neighbours = get_neighbours(vertices,size[0]-1,size[1]-1,size[2]-1,size)
@@ -121,7 +109,8 @@ def main():
 		# 	print(i.w, i.h,i.d,i.dt,i.state)
 
 		print('--Initial reconstruction')
-		fastmarching_dt_tree(img,bimg,dt_result,size,max_w,max_h,max_d,max_intensity)
+		fastmarching_dt_tree(img,bimg,size,max_w,max_h,max_d)
+		# fastmarching(img,bimg,dt_result,size)
 
 
 

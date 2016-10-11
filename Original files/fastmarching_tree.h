@@ -305,6 +305,8 @@ template<class T> bool fastmarching_tree(MyMarker root,
 	{
 		long index = root_ind;
 		HeapElemX *elem = new HeapElemX(index, phi[index]);
+		
+		// prev = parent?
 		elem->prev_ind = index;
 		heap.insert(elem);
 		elems[index] = elem;
