@@ -2,6 +2,7 @@ import numpy as np
 import numpy.linalg
 import math
 from utils.io import *
+from marker import *
 
 
 class vertex():
@@ -15,20 +16,6 @@ class vertex():
 		self.parent = [_w,_h,_d]
 		self.phi = math.inf
 		self.swc_index = 0
-
-	def add_neighbours(self,vertex):
-		self.neighbours.append(vertex)
-		vertex.neighbours.append(self)
-
-def euc_distance(x,y):
-		distance = math.sqrt((x.w-y.w) ** 2 + (x.h-y.h) ** 2 + (x.d-y.d) ** 2)
-		return distance
-
-def edge_distance(max_intensity, x, y):
-	# this 10 can be set up as a parameter
-	edge_distance = math.fabs(euc_distance(x,y)) * (
-		(math.exp(10 * ((1-x.intensity/max_intensity) ** 2))) + (math.exp(10 * ((1-y.intensity/max_intensity) ** 2))) / 2)
-	return edge_distance
 
 #  find average and max intensity
 def find_max_intensity(img,size):
@@ -52,10 +39,6 @@ def find_max_intensity(img,size):
 	print('total vertices: ', count)
 	return max_intensity
 
-# find centroid of soma
-# def find_cource(bimg):
-
-
 # find trial set
 def find_trial_set(vertices,max_w,max_h,max_d,size):
 	# set source which has the largest dt value
@@ -65,9 +48,6 @@ def find_trial_set(vertices,max_w,max_h,max_d,size):
 	count = 0
 	
 	neighbours = get_neighbours(vertices,max_w,max_h,max_d,size) 
-					
-	# set neighbours
-	# vertices[max_w][max_h][max_d].neighbours = neighbours
 
 	# find trial set
 	for i in neighbours:
@@ -86,7 +66,6 @@ def find_trial_set(vertices,max_w,max_h,max_d,size):
 def insert_trial_set(trial_set, vertex):
 	size = trial_set.size
 
-	# print(size)
 	if trial_set.size == 0:
 		trial_set = np.append(trial_set,vertex)
 
@@ -96,7 +75,6 @@ def insert_trial_set(trial_set, vertex):
 	else:
 		index = 0
 		for i in trial_set:
-			# print(i.w, i.h, i.d,i.dt,i.state)
 			if vertex.phi <= i.phi:
 				trial_set = np.insert(trial_set,index,vertex)
 				break
@@ -113,17 +91,17 @@ def extract_min_from_trial(trial_set):
 
 def adjust_in_trial(trial_set,neighbour):
 	index = 0
-	# neighbour_index = 0
+	if (trial_set.size == 0):
+		return trial_set
+
 	for i in trial_set:
 		if neighbour.w == i.w and neighbour.h == i.h and neighbour.d == i.d:
-			# neighbour_index = index
 			break
 		index+=1
 	trial_set = np.delete(trial_set,index)
 
 	index = 0
 	for i in trial_set:
-		# print(i.w, i.h, i.d,i.dt,i.state)
 		if neighbour.phi <= i.phi:
 			trial_set = np.insert(trial_set,index,neighbour)
 			break
@@ -131,8 +109,7 @@ def adjust_in_trial(trial_set,neighbour):
 
 	return trial_set
 
-def fastmarching_dt_tree(img,bimg,size,max_w,max_h,max_d):
-	# result = find_max_intensity(img,size)
+def fastmarching_dt_tree(img,bimg,size,max_w,max_h,max_d,threshold,allow_gap,out_path):
 
 	max_intensity = numpy.amax(img)
 	print('max intensity: ',max_intensity)
@@ -186,9 +163,12 @@ def fastmarching_dt_tree(img,bimg,size,max_w,max_h,max_d):
 
 					neighbour = vertices[w][h][d]
 
-					if (True):
-						if (img[w][h][d] <= 0 and img[i][j][k] <= 0):
-							continue;
+					if (allow_gap):
+						if (img[w][h][d] <= threshold and img[i][j][k] <= threshold):
+							continue
+					else:
+						if (img[w][h][d] <= threshold):
+							continue
 
 					if neighbour.state != 'ALIVE':
 						# not square?
@@ -222,78 +202,46 @@ def fastmarching_dt_tree(img,bimg,size,max_w,max_h,max_d):
 	print('total index: ',index)
 	print('alive size: ',len(alive))
 	
+	out_tree = np.empty(len(alive), dtype=marker)
 	print('--generate swc')
+
 	swc = []
-	
 	for i in alive:
 		p = i.parent
 		ind = i.swc_index
 		p_index = vertices[p[0]][p[1]][p[2]].swc_index
 		swc.append([ind,3,i.w,i.h,i.d,1,p_index])
+		new_marker = marker([i.w,i.h,i.d],ind,None)
+		out_tree.itemset(ind-1,new_marker)
+		# print(ind)
+
+	for i in alive:
+		p = i.parent
+		ind = i.swc_index
+		p_index = vertices[p[0]][p[1]][p[2]].swc_index
+		new_marker = marker([i.w,i.h,i.d],ind,out_tree[p_index-1])
+		out_tree.itemset(ind-1,new_marker)
 	
-	out_swc = np.asarray(swc)
-	swc_x = out_swc[:, 2].copy()
-	swc_y = out_swc[:, 3].copy()
-	out_swc[:, 2] = swc_y
-	out_swc[:, 3] = swc_x
+
+	for i in out_tree:
+		if i.parent is None:
+			print('ERROR!')
 
 
-	saveswc('test/crop2/my_ini.swc', out_swc)
-	print(swc)
+	ini_swc = np.asarray(swc)
+	swc_x = ini_swc[:, 2].copy()
+	swc_y = ini_swc[:, 3].copy()
+	ini_swc[:, 2] = swc_y
+	ini_swc[:, 3] = swc_x
+
+	saveswc(out_path+'test.swc', ini_swc)
+	print('swc size',len(swc))
+	print('--generated swc saved at: ',out_path+'test.swc')
+	# print('outtree size: ',out_tree.size)
+	return out_tree
 
 
 
-
-
-# get neighbour vertices of a vertex
-# def get_neighbours(vertices,w,h,d,size):
-# 	neighbours = np.empty(6,dtype=vertex)
-# 	if (w-1) >= 0:
-# 		if vertices[w-1][h][d].state != 'ALIVE':
-# 			neighbours[0] = vertices[w-1][h][d]
-# 	if (w+1) < size[0]:
-# 		if vertices[w+1][h][d].state != 'ALIVE':
-# 			neighbours[1] = vertices[w+1][h][d]
-
-# 	if (h-1) >= 0:
-# 		if vertices[w][h-1][d].state != 'ALIVE':
-# 			neighbours[2] = vertices[w][h-1][d]
-# 	if (h+1) < size[1]:
-# 		if vertices[w][h+1][d].state != 'ALIVE':
-# 			neighbours[3] = vertices[w][h+1][d]
-
-# 	if (d-1) >= 0:
-# 		if vertices[w][h][d-1].state != 'ALIVE':
-# 			neighbours[4] = vertices[w][h][d-1]
-# 	if (d+1) < size[2]:	
-# 		if vertices[w][h][d+1].state != 'ALIVE':
-# 			neighbours[5] = vertices[w][h][d+1]
-
-# 	return neighbours
-
-# def update_distance(vertices, trial_set, max_intensity, size):
-# 	trial_size = 1
-# 	loop_count = 0
-# 	while(loop_count <= 3):
-# 		for x in trial_set:
-# 			print('trial_size1	: ' + str(trial_set.size))	
-# 			print('trial vertex to be extracted: ',x.w,x.h,x.d)
-# 			neighbours = get_neighbours(vertices, x.w, x.h, x.d, size)
-# 			trial_set = extract_min_from_trial(trial_set)
-# 			print(neighbours.size)
-# 			for y in neighbours:
-# 				if y is not None:
-# 					print('neighbours: ',y.w,y.h,y.d,y.state)
-# 					if y.state == 'FAR':
-# 						y.parent = x
-# 						y.state = 'TRIAL'
-# 						print('before insert: ',trial_set.size)
-# 						trial_set = insert_trial_set(trial_set,y)
-# 						print('after insert: ',trial_set.size)
-# 					elif y.state == 'TRIAL':
-# 						if (x.dt + edge_distance(max_intensity,x,y) < x.dt):
-# 							y.parent = x
-# 		trial_size = trial_set.size
 
 
 	
