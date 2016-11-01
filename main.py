@@ -3,7 +3,8 @@ from scipy import ndimage
 
 import numpy as np
 from utils.io import *
-from fm import *
+from new_fm import *
+from new_hp import *
 from hierarchy_prune import *
 import skfmm
 np.set_printoptions(threshold=np.inf)
@@ -77,24 +78,15 @@ def main():
 
 		print('--Initial reconstruction')
 
+		# test_heap()
 		ini_swc = fastmarching_dt_tree(img,bimg,size,max_w,max_h,max_d,args.threshold,args.allow_gap,args.out)
-
 		
 		count = 0
-		for i in ini_swc:
-			if (i.parent is None):
-				count+=1
-		print('number of nodes without parents: ',count)
 
 		if not args.silence:
 			print('--Hierarchy Prune')
-
-			hierarchy_prune(ini_swc,img,args.out)
-
-def makespeed(dt, threshold=0):
-    F = dt ** 4
-    F[F<=threshold] = 1e-10
-    return F
+			new_hp(ini_swc,img,size)
+			# hierarchy_prune(ini_swc,img,size,args.out,args.threshold)
 
 if __name__ == "__main__":
     main()

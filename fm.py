@@ -4,7 +4,7 @@ import math
 from utils.io import *
 from marker import *
 
-
+# strcuture for each voxel in the image
 class vertex():
 	def __init__(self,_w,_h,_d,_intensity,_state):
 		self.w = _w
@@ -40,29 +40,34 @@ def find_max_intensity(img,size):
 	return max_intensity
 
 # find trial set
-def find_trial_set(vertices,max_w,max_h,max_d,size):
-	# set source which has the largest dt value
-	vertices[max_w][max_h][max_d].state = 'ALIVE'
+# def find_trial_set(vertices,max_w,max_h,max_d,size):
+# 	# set source which has the largest dt value
+# 	vertices[max_w][max_h][max_d].state = 'ALIVE'
 
-	trial_set = np.array([],dtype=vertex)
-	count = 0
+# 	trial_set = np.array([],dtype=vertex)
+# 	count = 0
 	
-	neighbours = get_neighbours(vertices,max_w,max_h,max_d,size) 
+# 	neighbours = get_neighbours(vertices,max_w,max_h,max_d,size) 
 
-	# find trial set
-	for i in neighbours:
-		i.state = 'TRIAL'
-		# set parent
-		i.parent = vertices[max_w][max_h][max_d]
-		# sort trial set
-		trial_set = insert_trial_set(trial_set,i)
-		count+=1
-		print('Actual' + str(trial_set.size))
-		print('Expected' + str(count))
+# 	# find trial set
+# 	for i in neighbours:
+# 		i.state = 'TRIAL'
+# 		# set parent
+# 		i.parent = vertices[max_w][max_h][max_d]
+# 		# sort trial set
+# 		trial_set = insert_trial_set(trial_set,i)
+# 		count+=1
+# 		print('Actual' + str(trial_set.size))
+# 		print('Expected' + str(count))
 
-	return trial_set
+# 	return trial_set
 
-# insert a a vertex into trial set
+"""
+Insert the vertex into trail_set 
+Parameters
+----------
+trail_set : the numpy array which contains the all vertex with status TRAIL 
+"""
 def insert_trial_set(trial_set, vertex):
 	size = trial_set.size
 
@@ -82,13 +87,27 @@ def insert_trial_set(trial_set, vertex):
 
 	return trial_set
 
+"""
+Extract the vertex with minimum distance to ALIVE set
+
+Parameters
+----------
+trail_set : the numpy array which contains the all vertex with status TRAIL 
+"""
 def extract_min_from_trial(trial_set):
 	min_vertex = trial_set[0]
 	trial_set = np.delete(trial_set,0)
 	print(trial_set.size)
 	return trial_set,min_vertex
 
+"""
+Update the vertex distance and adjust its position in trail set
 
+Parameters
+----------
+trail_set : the numpy array which contains the all vertex with status TRAIL
+neighbour : the vertex needs to update the distance and adjust the position 
+"""
 def adjust_in_trial(trial_set,neighbour):
 	index = 0
 	if (trial_set.size == 0):
@@ -109,13 +128,28 @@ def adjust_in_trial(trial_set,neighbour):
 
 	return trial_set
 
+"""
+Update the vertex distance and adjust its position in trail set
+
+Parameters
+----------
+img : input img intensity stored in 3d numpy array
+bimg : input binary intensity stored in 3d numpy array
+size : input img size
+max_w, max_h, max_d : the position where the seed location is
+threshold : background/foreground threshold
+allow_gap : if the fast marching needs to stride gaps
+out_path : the out path to store the initial swc file 
+"""
 def fastmarching_dt_tree(img,bimg,size,max_w,max_h,max_d,threshold,allow_gap,out_path):
 
 	max_intensity = numpy.amax(img)
 	print('max intensity: ',max_intensity)
 
+	# initialize a 3d numpy array to store all vertices
 	vertices = np.empty((size[0],size[1],size[2]),dtype=vertex)
 
+	# set all vertices have initial state FAR
 	for w in range (size[0]):
 		for h in range (size[1]):
 			for d in range (size[2]):
@@ -123,19 +157,19 @@ def fastmarching_dt_tree(img,bimg,size,max_w,max_h,max_d,threshold,allow_gap,out
 				element = vertex(w, h, d, img[w][h][d], state)
 				vertices[w][h][d] = element
 
+	# set seed location to ALIVE
 	vertices[max_w][max_h][max_d].state = 'ALIVE'
 	vertices[max_w][max_h][max_d].phi = 0.0
-	trial_set = np.array([],dtype=vertex)
 
+	# initialize the trail_set and put seed location into trail set
+	trial_set = np.array([],dtype=vertex)
 	trial_set = insert_trial_set(trial_set,vertices[max_w][max_h][max_d])
 
 	count = 0
+	
+	# extract the vertex with the minimum distance until the trail set is empty
 	while(trial_set.size != 0):
 		trial_set,min_vertex = extract_min_from_trial(trial_set)
-		
-		# if (min_vertex.dt == 0):
-		# 	print('FM turns background voxel to ALIVE, stop!')
-		# 	break
 
 		i = min_vertex.w
 		j = min_vertex.h
@@ -144,10 +178,12 @@ def fastmarching_dt_tree(img,bimg,size,max_w,max_h,max_d,threshold,allow_gap,out
 		min_ind = [i,j,k]
 		prev_ind = min_vertex.prev
 
+		# update the parent ndoe
 		min_vertex.parent = min_vertex.prev
 
 		min_vertex.state = 'ALIVE'
 
+		# find all the neighbours of the vertex with the minimum distance
 		for kk in range (-1,2):
 			d = k+kk
 			if(d < 0 or d >= size[2]):
@@ -170,16 +206,19 @@ def fastmarching_dt_tree(img,bimg,size,max_w,max_h,max_d,threshold,allow_gap,out
 						if (img[w][h][d] <= threshold):
 							continue
 
+					# if the state of neighbour is not ALIVE, update the distance
 					if neighbour.state != 'ALIVE':
-						# not square?
 						new_dist = min_vertex.phi + (1.0 - (img[w][h][d] - img[i][j][k]/max_intensity)*1000.0)
 						prev_ind = min_ind
 
+						# if the state of neighbour is FAR, insert into trail set
 						if(neighbour.state == 'FAR'):
 							neighbour.phi = new_dist
 							neighbour.state = 'TRIAL'
 							neighbour.prev = prev_ind
 							trial_set = insert_trial_set(trial_set,neighbour)
+						
+						# if the state of neighbour is TRAIL, update the distance
 						elif(neighbour.state == 'TRIAL'):
 							if (neighbour.phi > new_dist):
 								neighbour.phi = new_dist
@@ -196,7 +235,7 @@ def fastmarching_dt_tree(img,bimg,size,max_w,max_h,max_d,threshold,allow_gap,out
 			for d in range (size[2]):
 				if vertices[w][h][d].state == 'ALIVE':
 					vertices[w][h][d].swc_index = index
-					print('index: ',w,h,d)
+					# print('index: ',w,h,d)
 					alive.append(vertices[w][h][d])
 					index+=1
 	print('total index: ',index)
@@ -211,17 +250,21 @@ def fastmarching_dt_tree(img,bimg,size,max_w,max_h,max_d,threshold,allow_gap,out
 		ind = i.swc_index
 		p_index = vertices[p[0]][p[1]][p[2]].swc_index
 		swc.append([ind,3,i.w,i.h,i.d,1,p_index])
-		new_marker = marker([i.w,i.h,i.d],ind,None)
+		new_marker = marker([i.w,i.h,i.d],ind,None,1)
 		out_tree.itemset(ind-1,new_marker)
 		# print(ind)
 
+	seed_flag = 0
+	seed_location = []
+	seed_swc = 0
 	for i in alive:
 		p = i.parent
 		ind = i.swc_index
 		p_index = vertices[p[0]][p[1]][p[2]].swc_index
-		new_marker = marker([i.w,i.h,i.d],ind,out_tree[p_index-1])
+		if (ind == p_index):
+			p_index = -1
+		new_marker = marker([i.w,i.h,i.d],ind,out_tree[p_index-1],1)
 		out_tree.itemset(ind-1,new_marker)
-	
 
 	for i in out_tree:
 		if i.parent is None:
