@@ -38,16 +38,6 @@ givals = [22026.5,   20368, 18840.3, 17432.5, 16134.8, 14938.4, 13834.9, 12816.8
 1.03521,  1.0306, 1.02633, 1.02239, 1.01878,  1.0155, 1.01253, 1.00989, 
 1.00756, 1.00555, 1.00385, 1.00246, 1.00139, 1.00062, 1.00015,       1]
 
-class spatial:
-    def __init__(self, w, h, d):
-        self.w = w
-        self.h = h
-        self.d = d
-        self.parent = None
-
-    def set_parent(self,parent):
-    	self.parent = parent
-
 def GI(index,img,max_intensity,min_intensity):
 	return givals[(int)((img[index.w][index.h][index.d] - min_intensity)/max_intensity * 255)]
 
@@ -116,7 +106,7 @@ def find_adjust(trail_set, phi, new_dist, spatial):
 
 
 def fastmarching_dt_tree(img,bimg,size,seed_w,seed_h,seed_d,threshold,allow_gap,out_path):
-	max_intensity = numpy.amax(img)
+	max_intensity = np.amax(img)
 	print('max internsity:', max_intensity)
 
 
@@ -125,7 +115,7 @@ def fastmarching_dt_tree(img,bimg,size,seed_w,seed_h,seed_d,threshold,allow_gap,
 
 	# initialize 
 	phi = np.empty((size[0],size[1],size[2]),dtype = np.float32)
-	parent = np.zeros((size[0],size[1],size[2]),dtype = spatial)
+	parent = np.empty((size[0],size[1],size[2]),dtype = spatial)
 	prev = np.zeros((size[0],size[1],size[2]),dtype = spatial)
 	# trail_set = np.array([])
 	# trail_index = np.zeros((size[0],size[1],size[2]),dtype = np.int32)
@@ -177,7 +167,9 @@ def fastmarching_dt_tree(img,bimg,size,seed_w,seed_h,seed_d,threshold,allow_gap,
 						continue 
 
 					offset = abs(ii) + abs(jj) + abs(kk)
-					if (offset == 0):
+					# print('offset: ',offset)
+					# this 2 is cnn type
+					if offset == 0 or offset > 2:
 						continue
 
 					factor = 1
@@ -221,13 +213,15 @@ def fastmarching_dt_tree(img,bimg,size,seed_w,seed_h,seed_d,threshold,allow_gap,
 			for d in range(size[2]):
 				if state[w][h][d] == 2 and alive is not None:
 					node = spatial(w,h,d)
-					node.set_parent(parent[w][h][d])
+					# node.set_parent(parent[w][h][d])
 					alive = np.append(alive,node)
 				elif state[w][h][d] == 2 and alive is None:
 					node = spatial(w,h,d)
-					node.set_parent(parent[w][h][d])
+					# node.set_parent(parent[w][h][d])
 					alive = np.asarray(node)
 	print('alive: ',alive.size)
+
+
 
 	ini_swc = []
 	swc_map = np.empty((size[0],size[1],size[2]),dtype = np.int32)
@@ -235,6 +229,7 @@ def fastmarching_dt_tree(img,bimg,size,seed_w,seed_h,seed_d,threshold,allow_gap,
 	for i in alive:
 		ini_swc.append([index,3,i.w,i.h,i.d,1,0])
 		swc_map[i.w][i.h][i.d] = index
+		i.index = index
 		index+=1
 
 	seed_loc = swc_map[seed_w][seed_h][seed_d]-1
@@ -243,9 +238,23 @@ def fastmarching_dt_tree(img,bimg,size,seed_w,seed_h,seed_d,threshold,allow_gap,
 
 	for i in ini_swc:
 		p_loc = parent[i[2]][i[3]][i[4]]
-		print(i[2],i[3],i[4])
-		if i[6] != -1:
+		# print(i[2],i[3],i[4])
+		if i[6] == -1:
+			continue
+		else:
 			i[6] = swc_map[p_loc.w][p_loc.h][p_loc.d]
+
+	for i in alive:
+		# print(i.parent)
+		p = parent[i.w][i.h][i.d]
+		if p == 0:
+			i.set_parent(spatial(-1,-1,-1))
+			i.parent.index = -1
+			print('None parernt should be seed, ',i.w,i.h,i.d)
+		else:
+			i.set_parent(alive[swc_map[p.w][p.h][p.d]-1])
+			i.parent.index = swc_map[i.parent.w][i.parent.h][i.parent.d]
+		
 	# print(ini_swc[0])
 	ini_swc = np.asarray(ini_swc)
 	swc_x = ini_swc[:, 2].copy()
@@ -253,9 +262,9 @@ def fastmarching_dt_tree(img,bimg,size,seed_w,seed_h,seed_d,threshold,allow_gap,
 	ini_swc[:, 2] = swc_y
 	ini_swc[:, 3] = swc_x
 
-	saveswc(out_path+'new_fmtest.swc', ini_swc)
+	saveswc(out_path+'new_fmtest_gap.swc', ini_swc)
 
-	return ini_swc
+	return alive
 
 
 

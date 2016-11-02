@@ -4,6 +4,7 @@ class spatial:
         self.h = h
         self.d = d
         self.parent = None
+        self.index = None
 
     def set_parent(self,parent):
     	self.parent = parent
