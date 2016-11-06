@@ -79,13 +79,12 @@ def main():
 		print('--Initial reconstruction')
 
 		# test_heap()
-		ini_swc = fastmarching_dt_tree(img,bimg,size,max_w,max_h,max_d,args.threshold,args.allow_gap,args.out)
+		app2(img,bimg,size,max_w,max_h,max_d,args.threshold,args.allow_gap,args.out)
 		
-		count = 0
 
-		if not args.silence:
-			print('--Hierarchy Prune')
-			new_hp(ini_swc,img,size)
+		# if not args.silence:
+			# print('--Hierarchy Prune')
+			# new_hp(ini_swc,img,size)
 			# hierarchy_prune(ini_swc,img,size,args.out,args.threshold)
 
 if __name__ == "__main__":

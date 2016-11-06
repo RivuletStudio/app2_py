@@ -7,6 +7,11 @@ def main():
 	input = loadswc(input_file)
 	input[:, 5] =  1
 	print(input[0])
+	count = 0
+	for i in input[6]:
+		if i == 12601:
+			count += 1
+	print('neighbors amount of seed: ',count)
 	saveswc(input_file,input)
 
 

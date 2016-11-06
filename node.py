@@ -1,3 +1,5 @@
+import numpy as np
+
 class spatial:
     def __init__(self, w, h, d):
         self.w = w
@@ -8,3 +10,35 @@ class spatial:
 
     def set_parent(self,parent):
     	self.parent = parent
+
+class segment():
+	def __init__(self, leaf, root, length, level):
+		self.leaf = leaf
+		self.root = root
+		self.length = length
+		self.level = level
+		self.parent = None
+
+	def get_elements(self):
+		if (self.leaf is None or self.root is None):
+			print('incomplete segments')
+			return
+
+		out_swc = np.asarray([])
+		# if (self.root_marker.parent is None):
+		# print('root marker no parents')
+		m = self.leaf
+		# out_swc = np.append(out_swc,self.leaf)
+		while (m != self.root):
+			out_swc = np.append(out_swc, m)
+			m = m.parent
+
+		out_swc = np.append(out_swc,self.root)
+		if (m != self.root):
+			if (m is not None):
+				print('error')
+				print('m: ',m.w,m.h,m.d)
+				print('leaf: ',self.leaf.w,self.leaf.h,self.leaf.d)
+				print('root: ',self.root.w,self.root.h,self.root.d)
+
+		return out_swc
