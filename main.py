@@ -5,7 +5,7 @@ import numpy as np
 from utils.io import *
 from new_fm import *
 from new_hp import *
-from hierarchy_prune import *
+# from hierarchy_prune import *
 import skfmm
 np.set_printoptions(threshold=np.inf)
 
@@ -76,10 +76,15 @@ def main():
 
 		print('--seed_index', max_dt,max_dt1,max_w,max_h,max_d)
 
-		print('--Initial reconstruction')
+		print('--Initial reconstruction by Fast Marching')
 
 		# test_heap()
-		app2(img,bimg,size,max_w,max_h,max_d,args.threshold,args.allow_gap,args.out)
+		alive = fastmarching(img,bimg,size,max_w,max_h,max_d,args.threshold,args.allow_gap,args.out)
+
+
+		# new_hp(img,alive,args.out)
+		hp(img,size,alive,args.out,args.threshold)
+
 		
 
 		# if not args.silence:

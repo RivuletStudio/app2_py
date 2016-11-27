@@ -115,14 +115,14 @@ def app2(img, bimg, size, seed_w, seed_h, seed_d, threshold,
 
     alive = fastmarching(img, bimg, size, seed_w, seed_h, seed_d, threshold,
                          allow_gap, out_path)
-    hp(img,alive)
+    hp(img,alive,out_path)
 
 
 
 def fastmarching(img, bimg, size, seed_w, seed_h, seed_d, threshold,
                          allow_gap, out_path):
     max_intensity = np.amax(img)
-    print('max internsity:', max_intensity)
+    print('max intensity:', max_intensity)
 
     # state 0 for FAR, state 1 for TRAIL, state 2 for ALIVE
     state = np.zeros((size[0], size[1], size[2]))
@@ -291,7 +291,7 @@ def fastmarching(img, bimg, size, seed_w, seed_h, seed_d, threshold,
     return alive
 
 
-def hp(img,alive):
+def hp(img,size,alive,out,threshold):
     print('Hierarchical Prune...')
 
     tol_num = alive.size
@@ -418,7 +418,7 @@ def hp(img,alive):
 
     for seg in topo_segs:
         # seg_length = np.append(seg_length,seg.length)
-        if seg.length > 4:
+        if seg.length > 3.5:
             filter_segs = np.append(filter_segs, seg)
 
     seg_swc = []
@@ -442,12 +442,246 @@ def hp(img,alive):
     swc_y = seg_swc[:, 3].copy()
     seg_swc[:, 2] = swc_y
     seg_swc[:, 3] = swc_x
-    saveswc('test/crop1/seg2.swc', seg_swc)
+    saveswc(out+'length_threshold35_test.swc', seg_swc)
 
     # longest_segment(topo_dists, topo_leafs,alive,leaf_nodes)
+    
+    # dark nodes pruning
+    # print('--dark node pruning')
+    # dark_num_pruned = 1
+    # iteration = 1
+    # is_pruneable = np.zeros(filter_segs.size)
+
+    # index = 0
+    # while(dark_num_pruned > 0):
+    #     dark_num_pruned = 0
+    #     for seg in filter_segs:
+    #         leaf_marker = seg.leaf
+    #         root_marker = seg.root
+    #         if leaf_marker == root_marker:
+    #             continue
+    #         if img[leaf_marker.w][leaf_marker.h][leaf_marker.d] <= threshold:
+    #             seg.leaf_marker = leaf_marker.parent
+    #             dark_num_pruned+=1
+    #             is_pruneable[index] = 1
+    #         else:
+    #             is_pruneable[index] = 0
+    #     index+=1
+
+    # dark segment pruning
+    # print('--dark segment pruning')
+    # delete_set = np.array([])
+    # index = 0
+    # for seg in filter_segs:
+    #     leaf_marker = seg.leaf
+    #     root_marker = seg.root
+    #     if(leaf_marker == root_marker):
+    #         delete_set =  np.append(delete_set,index)
+    #     p = leaf_marker
+    #     sum_int=tol_num=dark_num = 0.0
+    #     while(1):
+    #         intensity = img[leaf_marker.w][leaf_marker.h][leaf_marker.d]
+    #         sum_int+=intensity
+    #         tol_num+=1
+    #         if (intensity <= threshold):
+    #             dark_num+=1
+    #         if (p == root_marker):
+    #             break
+    #         p = p.parent
+    #     if (sum_int/tol_num <= threshold or dark_num/tol_num >= 0.2 and is_pruneable[index] == 0):
+    #         delete_set =  np.append(delete_set,index)
+    #     index+=1
+
+    # print('delete size:', delete_set.size)
+    # tmp_segs = np.array([])
+    # index = 0
+    # d_index = 0
+    # for seg in filter_segs:
+    #     # print(index,delete_set[0])
+    #     if index == delete_set[0]:
+    #         # print('delete')
+    #         delete_set = np.delete(delete_set,0)
+    #         continue
+    #     else:
+    #         tmp_segs = np.append(tmp_segs,seg)
+    #     index+=1
+
+    # filter_segs = tmp_segs
+    
+    # calculate radius for every node
+    print('--calculating radius for every node')
+    index = 0
+    for seg in filter_segs:
+        # print(index)
+        leaf_marker = seg.leaf
+        root_marker = seg.root
+        p = leaf_marker
+        while(1):
+            real_threshold = 40
+            if (real_threshold < threshold):
+                real_threshold = threshold
+            p.radius = markerRadius(img,size,p,real_threshold)
+            if (p == root_marker):
+                break
+            p = p.parent
+        index+=1
+
+    print('--Hierarchical Pruning')
+    # sort_segs = []
+    # for seg in filter_segs:
+    #     sort_segs.append(seg)
+
+    # # sort by the length of the segment
+    # sort_segs.sort(key=lambda x:x.length, reverse=True)
+    # sort_segs = np.asarray(sort_segs)
+    # visited_segs = np.array([])
+    # result_segs = np.array([])
+    # tol_sum_sig = tol_sum_rdc = 0.0
+    # tmpimg = img
+    # for seg in sort_segs:
+    #     # s_id = np.argwhere(visited_segs==seg.parent)
+    #     # if (seg.parent and (s_id == visited_segs.size-1)):
+    #     #     continue
+    #     if (seg.parent and visited_segs[-1] == seg.parent):
+    #         continue
+    #     leaf_marker = seg.leaf
+    #     root_marker = seg.root
+    #     sr_ratio = 1.0/9.0
+
+    #     sum_sig=sum_rdc=0
+
+    #     p = leaf_marker
+    #     while(1):
+    #         if(img[p.w][p.h][p.d] == 0):
+    #             sum_rdc += img[p.w][p.h][p.d]
+    #         else:
+    #             r = p.radius
+    #             sum_sphere_size = 0.0
+    #             sum_delete_size = 0.0
+    #             for kk in range(-r,r+1,1):
+    #                 z1 = p.d + kk
+    #                 if z1 < 0 or z1 >= size[2]:
+    #                     continue
+    #                     for jj in range(-r,r+1,1):
+    #                         y1 = p.h + jj
+    #                         if y1 < 0 or y2 >= size[1]:
+    #                             continue    
+    #                             for ii in range(-r,r+1,1):
+    #                                 x1 = p.w + ii
+    #                                 if x1 < 0 or x2 > size[0]:
+    #                                     continue
+    #                                 sum_sphere_size+=1
+    #                                 if (img[x1][y1][z1] != tmpimg[x1][y1][z1]):
+    #                                     sum_delete_size+=1
+    #             if(sum_sphere_size > 0 and sum_delete_size/sum_sphere_size > 0.1):
+    #                 sum_rdc += img[p.w][p.h][p.d]
+    #             else:
+    #                 sum_sig += img[p.w][p.h][p.d]
+
+    #         if p == root_marker:
+    #             break
+    #         p = p.parent
+
+    #     if(seg.parent is None or sum_rdc == 0.0 or sum_sig/sum_rdc >= sr_ratio):
+    #         tol_sum_sig += sum_sig
+    #         tol_sum_rdc += sum_rdc
+
+    #         p = leaf_marker
+    #         seg_markers = np.array([])
+    #         while(1):
+    #             if (tmpimg[p.w][p.h][p.d] != 0):
+    #                 seg_markers = np.append(seg_markers,p)
+    #             if p == root_marker:
+    #                 break
+    #             p = p.parent
+
+    #         for marker in seg_markers:
+    #             r = marker.radius
+    #             if (r > 0):
+    #                 rr = r*r
+    #                 for kk in range(-r,r+1,1):
+    #                     z1 = p.d + kk
+    #                     if z1 < 0 or z1 >= size[2]:
+    #                         continue
+    #                     for jj in range(-r,r+1,1):
+    #                         y1 = p.h + jj
+    #                         if y1 < 0 or y1 >= size[1]:
+    #                             continue    
+    #                         for ii in range(-r,r+1,1):
+    #                             x1 = p.w + ii
+    #                             if x1 < 0 or x1 > size[0]:
+    #                                 continue
+    #                             dst = ii*ii + jj*jj + kk*kk
+    #                             if dst > rr:
+    #                                 continue
+    #                             tmpimg[x1][y1][z1] = 0
+    #         result_segs = np.append(result_segs,seg)
+    #         visited_segs = np.append(visited_segs,seg)
+
+
+
+
+
+
+    seg_swc = []
+
+    count = 0
+    index = 0
+
+    for seg in filter_segs:
+        seg_tree = seg.get_elements()
+        for i in seg_tree:
+            # print(i.parent)
+            if i.parent is None:
+                seg_swc.append([i.index, 3, i.w, i.h, i.d, i.radius, -1])
+                count += 1
+            else:
+                seg_swc.append([i.index, 3, i.w, i.h, i.d, i.radius, i.parent.index])
+            # seg = seg.parent
+
+    seg_swc = np.asarray(seg_swc)
+    swc_x = seg_swc[:, 2].copy()
+    swc_y = seg_swc[:, 3].copy()
+    seg_swc[:, 2] = swc_y
+    seg_swc[:, 3] = swc_x
+    saveswc(out+'length_threshold35_test_radius.swc', seg_swc)
+
+
+
+
     return
 
 
+
+def markerRadius(img,size,p,threshold):
+    max_r = min(size[0]/2,size[1]/2,size[2]/2)
+
+    for ir in range(1,int(max_r+1),1):
+        total_num = background_num = 0
+        
+
+        print(ir)
+        for dz in range(-ir, ir+1,1):
+            for dy in range(-ir, ir+1,1):
+                for dx in range(-ir,ir+1,1):
+                    total_num+=1
+                    r = math.sqrt(dx*dx + dy*dy + dz*dz)
+                    if (r > ir-1 and r<=ir):
+                        i = p.w+dx
+                        if (i<0 or i>=size[0]):
+                            return ir
+                        j = p.h+dy
+                        if (j<0 or j>=size[1]):
+                            return ir
+                        k = p.d+dz
+                        if (k<0 or k>=size[2]):
+                            return ir 
+
+                        if (img[i][j][k] <= threshold):
+                            background_num+=1
+                            if (background_num/total_num > 0.001):
+                                return ir
+    return ir
 
 
 

@@ -7,6 +7,7 @@ class spatial:
         self.d = d
         self.parent = None
         self.index = None
+        self.radius = 1
 
     def set_parent(self,parent):
     	self.parent = parent
