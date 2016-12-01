@@ -83,7 +83,7 @@ def main():
 
 
 		# new_hp(img,alive,args.out)
-		hp(img,size,alive,args.out,args.threshold)
+		hp(img,bimg,size,alive,args.out,args.threshold)
 
 		
 
