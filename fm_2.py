@@ -1,7 +1,6 @@
 import numpy as np
 import numpy.linalg
 import math
-import time
 from utils.io import *
 from node import *
 
@@ -43,36 +42,38 @@ givals = [
 def GI(index, img, max_intensity, min_intensity):
     return givals[(int)((img[index.w][index.h][index.d] - min_intensity) /
                         max_intensity * 255)]
+
 """
-Insert the vertex into trail_set and keep the phi in the decreasing order
+Insert the vertex into trail_set 
 
 Parameters
 ----------
 trail_set : the numpy array which contains the all vertex with status TRAIL 
 """
-def insert(trail_set, phi, new_dist, spatial):
+def insert(trail_set, phi, new_dist, node):
     ind = 0
+    print('before insert: ',trail_set.size)
     if trail_set is None:
-        trail_set = np.insert(trail_set, ind, spatial)
-        # print('after insert: ',trail_set.size)
+        trail_set = np.insert(trail_set, ind, node)
         return trail_set
 
-    # print('size: ',trail_set.size)
     for i in trail_set:
+    	print(type(i),i.w)
         if new_dist < phi[i.w][i.h][i.d]:
-            trail_set = np.insert(trail_set, ind, spatial)
-            # print('after insert: ',trail_set.size)
+            trail_set = np.insert(trail_set, ind, node)
             return trail_set
         ind += 1
     trail_set = np.insert(trail_set, ind, spatial)
+    print('after insert: ',trail_set.size)
     return trail_set
 
 """
-adjust the target node location in the trail set according to the updated distance
+Update the vertex distance and adjust its position in trail set
 
 Parameters
 ----------
-trail_set : the numpy array which contains the all vertex with status TRAIL 
+trail_set : the numpy array which contains the all vertex with status TRAIL
+neighbour : the vertex needs to update the distance and adjust the position 
 """
 def find_adjust(trail_set, phi, new_dist, spatial):
     index = 0
@@ -91,129 +92,55 @@ def find_adjust(trail_set, phi, new_dist, spatial):
             return trail_set, ind
         ind += 1
     trail_set = np.insert(trail_set, ind, spatial)
-    # print('after insert: ',trail_set.size)
     return
 
 """
-initial tree reconsturction using fast-marching
+Update the vertex distance and adjust its position in trail set
+Find all possible foreground voxel
 
+Parameters
+----------
+img : input img intensity stored in 3d numpy array
+bimg : input binary intensity stored in 3d numpy array
+size : input img size
+seed_w, seed_h, seed_d : the position where the seed location is
+threshold : background/foreground threshold
+allow_gap : if the fast marching needs to stride gaps
+out_path : the out path to store the initial swc file 
 """
-def fastmarching(img, bimg, size, seed_w, seed_h, seed_d, max_intensity,threshold,
-                         allow_gap, out_path):
+def fastmarching(img,bimg,size,seed_location,max_intensity,threshold,allow_gap,out_path):
 
-    starttime = time.time()
     # state 0 for FAR, state 1 for TRAIL, state 2 for ALIVE
     state = np.zeros((size[0], size[1], size[2]))
 
     # initialize 
-    phi = np.empty((size[0], size[1], size[2]), dtype=np.float32)
-    parent = np.empty((size[0], size[1], size[2]), dtype=spatial)
-    prev = np.empty((size[0], size[1], size[2]), dtype=spatial)
+    phi = np.empty(size, dtype=np.float32)
+    parent = np.empty(size, dtype=spatial)
+    prev = np.empty(size, dtype=spatial)
 
-    # for w in range(size[0]):
-    #     for h in range(size[1]):
-    #         for d in range(size[2]):
-    #             parent[w][h][d] = spatial(w, h, d)
-    #             phi[w][h][d] = np.inf
-
-
-    starttime = time.time()
-    for i in range(size[0]):
-        phi[i,:,:] = np.inf
-    # for w in range(size[0]):
-    #     for h in range(size[1]):
-    #         for d in range(size[2]):
-    #             if(phi[w][h][d] != 10):
-    #                 print('error')
-    print('--Cost2: %.2f sec.' % (time.time() - starttime))                
-    print('finish assigning values')
+    for w in range(size[0]):
+        for h in range(size[1]):
+            for d in range(size[2]):
+                parent[w][h][d] = spatial(w, h, d)
+                phi[w][h][d] = np.inf
 
     # put seed into ALIVE set
-    state[seed_w][seed_h][seed_d] = 2
-    phi[seed_w][seed_h][seed_d] = 0.0
+    state[seed_location[0]][seed_location[1]][seed_location[2]] = 2
+    phi[seed_location[0]][seed_location[1]][seed_location[2]] = 0.0
 
-    # spatial_index = spatial(seed_w, seed_h, seed_d)
-    trail_set = np.asarray([1,1,seed_w, seed_h, seed_d,1,-1])
+    spatial_index = spatial(seed_location[0],seed_location[1],seed_location[2])
+    trail_set = np.asarray([spatial_index])
     # print('11111size: ',trail_set.size)
     index = 0
-
-    # while (trail_set.size != 0):
-    #     # print('size: ',trail_set.size)
-    #     min_ind = trail_set.item(0)
-    #     trail_set = np.delete(trail_set, 0)
-    #     i = min_ind.w
-    #     j = min_ind.h
-    #     k = min_ind.d
-    #     prev_ind = prev[i][j][k]
-
-    #     parent[i][j][k] = prev_ind
-
-    #     state[i][j][k] = 2
-
-    #     for kk in range(-1, 2):
-    #         d = k + kk
-    #         # if (d < 0 or d >= size[2]):
-    #         #     continue
-    #         for jj in range(-1, 2):
-    #             h = j + jj
-    #             # if (h < 0 or h >= size[1]):
-    #             #     continue
-    #             for ii in range(-1, 2):
-    #                 w = i + ii
-    #                 # if (w < 0 or w >= size[0]):
-    #                 #     continue
-
-    #                 offset = abs(ii) + abs(jj) + abs(kk)
-    #                 # print('offset: ',offset)
-    #                 # this 2 is cnn type
-    #                 if offset == 0 or offset > 2:
-    #                     continue
-
-    #                 factor = 1
-    #                 if offset == 2:
-    #                     factor = 1.414214
-    #                 # elif offset == 3:
-    #                 #     factor = 1.732051
-
-    #                 # if (allow_gap):
-    #                 if (img[w][h][d] <= threshold and
-    #                         img[i][j][k] <= threshold):
-    #                     continue
-    #                 # else:
-    #                 #     if (img[w][h][d] <= threshold):
-    #                 #         continue
-
-    #                 spatial_index = spatial(w, h, d)
-    #                 if (state[w][h][d] != 2):
-    #                     # min_intensity set as 0
-    #                     new_dist = phi[w][h][d] + (GI(
-    #                         spatial_index, img, max_intensity, 0.0) + GI(
-    #                             min_ind, img, max_intensity, 0.0)
-    #                                                ) * factor * 0.5
-    #                     prev_ind = min_ind
-
-    #                     if (state[w][h][d] == 0):
-    #                         phi[w][h][d] = new_dist
-    #                         # spatial_index = spatial(w,h,d)
-    #                         trail_set = insert(trail_set, phi, new_dist,
-    #                                            spatial_index)
-    #                         prev[w][h][d] = prev_ind
-    #                         state[w][h][d] = 1
-
-    #                     elif (state[w][h][d] == 1):
-    #                         if (phi[w][h][d] > new_dist):
-    #                             phi[w][h][d] = new_dist
-    #                             # spatial_index = spatial(w,h,d)
-    #                             result = find_adjust(trail_set, phi, new_dist,
-    #                                                  spatial_index)
-    #                             trail_set = result[0]
-    #                             trail_index[w][h][d] = result[1]
-    #                             prev[w][h][d] = prev_ind
 
     while (trail_set.size != 0):
         # print('size: ',trail_set.size)
         min_ind = trail_set.item(0)
         trail_set = np.delete(trail_set, 0)
+        # print('size: ',trail_set.size)
+        # print('after extract: ',trail_set.size)
+        # min_ind = min_elem.index
+        # print(min_ind)
         i = min_ind.w
         j = min_ind.h
         k = min_ind.d
@@ -225,16 +152,16 @@ def fastmarching(img, bimg, size, seed_w, seed_h, seed_d, max_intensity,threshol
 
         for kk in range(-1, 2):
             d = k + kk
-            # if (d < 0 or d >= size[2]):
-            #     continue
+            if (d < 0 or d >= size[2]):
+                continue
             for jj in range(-1, 2):
                 h = j + jj
-                # if (h < 0 or h >= size[1]):
-                #     continue
+                if (h < 0 or h >= size[1]):
+                    continue
                 for ii in range(-1, 2):
                     w = i + ii
-                    # if (w < 0 or w >= size[0]):
-                    #     continue
+                    if (w < 0 or w >= size[0]):
+                        continue
 
                     offset = abs(ii) + abs(jj) + abs(kk)
                     # print('offset: ',offset)
@@ -245,16 +172,16 @@ def fastmarching(img, bimg, size, seed_w, seed_h, seed_d, max_intensity,threshol
                     factor = 1
                     if offset == 2:
                         factor = 1.414214
-                    # elif offset == 3:
-                    #     factor = 1.732051
+                    elif offset == 3:
+                        factor = 1.732051
 
-                    # if (allow_gap):
-                    if (img[w][h][d] <= threshold and
-                            img[i][j][k] <= threshold):
-                        continue
-                    # else:
-                    #     if (img[w][h][d] <= threshold):
-                    #         continue
+                    if (allow_gap):
+                        if (img[w][h][d] <= threshold and
+                                img[i][j][k] <= threshold):
+                            continue
+                    else:
+                        if (img[w][h][d] <= threshold):
+                            continue
 
                     spatial_index = spatial(w, h, d)
                     if (state[w][h][d] != 2):
@@ -268,8 +195,7 @@ def fastmarching(img, bimg, size, seed_w, seed_h, seed_d, max_intensity,threshol
                         if (state[w][h][d] == 0):
                             phi[w][h][d] = new_dist
                             # spatial_index = spatial(w,h,d)
-                            trail_set = insert(trail_set, phi, new_dist,
-                                               spatial_index)
+                            trail_set = insert(trail_set,phi,new_dist,spatial_index)
                             prev[w][h][d] = prev_ind
                             state[w][h][d] = 1
 
@@ -283,28 +209,20 @@ def fastmarching(img, bimg, size, seed_w, seed_h, seed_d, max_intensity,threshol
                                 trail_index[w][h][d] = result[1]
                                 prev[w][h][d] = prev_ind
 
-
-
     print('--FM finished')
-    print('--Fast Marching: %.2f sec.' % (time.time() - starttime))
 
     print('--Store ini_swc')
-    starttime = time.time()
-    # print('--Start: %.2f sec.' % (starttime))
-    alive = np.asarray(spatial(seed_w, seed_h, seed_d))
+    alive = np.asarray(spatial(seed_location[0], seed_location[1], seed_location[2]))
     for w in range(size[0]):
         for h in range(size[1]):
             for d in range(size[2]):
                 if state[w][h][d] == 2:
-                    if (w != seed_w or h != seed_h or d != seed_d):
+                    if (w != seed_location[0] or h != seed_location[1] or d != seed_location[2]):
                         node = spatial(w, h, d)
                         # node.set_parent(parent[w][h][d])
                         alive = np.append(alive, node)
     print('alive: ', alive.size)
-    print('--Store swc: %.2f sec.' % (time.time() - starttime))
 
-
-    starttime = time.time()
     ini_swc = []
     swc_map = np.empty((size[0], size[1], size[2]), dtype=np.int32)
     index = 0
@@ -314,7 +232,7 @@ def fastmarching(img, bimg, size, seed_w, seed_h, seed_d, max_intensity,threshol
         i.index = index
         index += 1
 
-    seed_loc = swc_map[seed_w][seed_h][seed_d]
+    seed_loc = swc_map[seed_location[0]][seed_location[1]][seed_location[2]]
 
     ini_swc[seed_loc][6] = -1
 
@@ -346,9 +264,7 @@ def fastmarching(img, bimg, size, seed_w, seed_h, seed_d, max_intensity,threshol
 
     saveswc(out_path + 'new_fmtest_gap.swc', ini_swc)
 
-
-    # print('--Finished: %.2f sec.' % (time.time() - starttime))
-    # print('--FM finished')
+    print('--FM finished')
 
     t = alive[100].parent
     print(swc_map[t.w][t.h][t.d])
@@ -356,3 +272,12 @@ def fastmarching(img, bimg, size, seed_w, seed_h, seed_d, max_intensity,threshol
     print(swc_map[p.w][p.h][p.d])
 
     return alive
+
+
+
+
+
+	
+
+
+		

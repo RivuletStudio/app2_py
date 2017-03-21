@@ -9,9 +9,6 @@ class spatial:
         self.index = None
         self.radius = 1
 
-    def set_parent(self,parent):
-    	self.parent = parent
-
 class segment():
 	def __init__(self, leaf, root, length, level):
 		self.leaf = leaf
