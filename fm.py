@@ -101,7 +101,7 @@ initial tree reconsturction using fast-marching
 def fastmarching(img, bimg, size, seed_w, seed_h, seed_d, max_intensity,threshold,
                          allow_gap, out_path):
 
-    starttime = time.time()
+    # starttime = time.time()
     # state 0 for FAR, state 1 for TRAIL, state 2 for ALIVE
     state = np.zeros((size[0], size[1], size[2]))
 
@@ -117,7 +117,6 @@ def fastmarching(img, bimg, size, seed_w, seed_h, seed_d, max_intensity,threshol
     #             phi[w][h][d] = np.inf
 
 
-    starttime = time.time()
     for i in range(size[0]):
         phi[i,:,:] = np.inf
     # for w in range(size[0]):
@@ -125,93 +124,22 @@ def fastmarching(img, bimg, size, seed_w, seed_h, seed_d, max_intensity,threshol
     #         for d in range(size[2]):
     #             if(phi[w][h][d] != 10):
     #                 print('error')
-    print('--Cost2: %.2f sec.' % (time.time() - starttime))                
-    print('finish assigning values')
 
     # put seed into ALIVE set
     state[seed_w][seed_h][seed_d] = 2
     phi[seed_w][seed_h][seed_d] = 0.0
 
-    # spatial_index = spatial(seed_w, seed_h, seed_d)
-    trail_set = np.asarray([1,1,seed_w, seed_h, seed_d,1,-1])
+    spatial_index = spatial(seed_w, seed_h, seed_d)
+    trail_set = np.asarray(spatial_index)
+    # trail_set = np.asarray([1,1,seed_w, seed_h, seed_d,1,-1])
     # print('11111size: ',trail_set.size)
     index = 0
 
-    # while (trail_set.size != 0):
-    #     # print('size: ',trail_set.size)
-    #     min_ind = trail_set.item(0)
-    #     trail_set = np.delete(trail_set, 0)
-    #     i = min_ind.w
-    #     j = min_ind.h
-    #     k = min_ind.d
-    #     prev_ind = prev[i][j][k]
-
-    #     parent[i][j][k] = prev_ind
-
-    #     state[i][j][k] = 2
-
-    #     for kk in range(-1, 2):
-    #         d = k + kk
-    #         # if (d < 0 or d >= size[2]):
-    #         #     continue
-    #         for jj in range(-1, 2):
-    #             h = j + jj
-    #             # if (h < 0 or h >= size[1]):
-    #             #     continue
-    #             for ii in range(-1, 2):
-    #                 w = i + ii
-    #                 # if (w < 0 or w >= size[0]):
-    #                 #     continue
-
-    #                 offset = abs(ii) + abs(jj) + abs(kk)
-    #                 # print('offset: ',offset)
-    #                 # this 2 is cnn type
-    #                 if offset == 0 or offset > 2:
-    #                     continue
-
-    #                 factor = 1
-    #                 if offset == 2:
-    #                     factor = 1.414214
-    #                 # elif offset == 3:
-    #                 #     factor = 1.732051
-
-    #                 # if (allow_gap):
-    #                 if (img[w][h][d] <= threshold and
-    #                         img[i][j][k] <= threshold):
-    #                     continue
-    #                 # else:
-    #                 #     if (img[w][h][d] <= threshold):
-    #                 #         continue
-
-    #                 spatial_index = spatial(w, h, d)
-    #                 if (state[w][h][d] != 2):
-    #                     # min_intensity set as 0
-    #                     new_dist = phi[w][h][d] + (GI(
-    #                         spatial_index, img, max_intensity, 0.0) + GI(
-    #                             min_ind, img, max_intensity, 0.0)
-    #                                                ) * factor * 0.5
-    #                     prev_ind = min_ind
-
-    #                     if (state[w][h][d] == 0):
-    #                         phi[w][h][d] = new_dist
-    #                         # spatial_index = spatial(w,h,d)
-    #                         trail_set = insert(trail_set, phi, new_dist,
-    #                                            spatial_index)
-    #                         prev[w][h][d] = prev_ind
-    #                         state[w][h][d] = 1
-
-    #                     elif (state[w][h][d] == 1):
-    #                         if (phi[w][h][d] > new_dist):
-    #                             phi[w][h][d] = new_dist
-    #                             # spatial_index = spatial(w,h,d)
-    #                             result = find_adjust(trail_set, phi, new_dist,
-    #                                                  spatial_index)
-    #                             trail_set = result[0]
-    #                             trail_index[w][h][d] = result[1]
-    #                             prev[w][h][d] = prev_ind
-
+    starttime = time.time()
+    counter = 0
     while (trail_set.size != 0):
         # print('size: ',trail_set.size)
+        counter+=1
         min_ind = trail_set.item(0)
         trail_set = np.delete(trail_set, 0)
         i = min_ind.w
@@ -266,25 +194,31 @@ def fastmarching(img, bimg, size, seed_w, seed_h, seed_d, max_intensity,threshol
                         prev_ind = min_ind
 
                         if (state[w][h][d] == 0):
+                            sort_time = time.time()
                             phi[w][h][d] = new_dist
                             # spatial_index = spatial(w,h,d)
                             trail_set = insert(trail_set, phi, new_dist,
                                                spatial_index)
                             prev[w][h][d] = prev_ind
                             state[w][h][d] = 1
+                            # print('sort takes: %.2f',time.time()-sort_time)
 
                         elif (state[w][h][d] == 1):
-                            if (phi[w][h][d] > new_dist):
+                            # print(phi[w][h][d],new_dist)
+                            if (phi[w][h][d] < new_dist):
+                                print(bingo)
                                 phi[w][h][d] = new_dist
                                 # spatial_index = spatial(w,h,d)
+                                sort_time = time.time()
                                 result = find_adjust(trail_set, phi, new_dist,
                                                      spatial_index)
+                                # print('find_adjust takes: %.2f'%time.time()-sort_time)
                                 trail_set = result[0]
                                 trail_index[w][h][d] = result[1]
                                 prev[w][h][d] = prev_ind
 
 
-
+    print(counter)
     print('--FM finished')
     print('--Fast Marching: %.2f sec.' % (time.time() - starttime))
 
@@ -344,7 +278,7 @@ def fastmarching(img, bimg, size, seed_w, seed_h, seed_d, max_intensity,threshol
     ini_swc[:, 2] = swc_y
     ini_swc[:, 3] = swc_x
 
-    saveswc(out_path + 'new_fmtest_gap.swc', ini_swc)
+    saveswc(out_path + 'fm_ini.swc', ini_swc)
 
 
     # print('--Finished: %.2f sec.' % (time.time() - starttime))

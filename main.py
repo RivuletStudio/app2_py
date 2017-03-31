@@ -4,7 +4,7 @@ import time
 import numpy as np
 from utils.io import *
 from new_fm import *
-from hp import *
+from new_hp import *
 # from hierarchy_prune import *
 import skfmm
 np.set_printoptions(threshold=np.inf)
@@ -64,18 +64,20 @@ def main():
 		# marchmap = np.ones(size)
 		# marchmap[seed_location[0]][seed_location[1]][seed_location[2]] = -1
 		# t = skfmm.travel_time(marchmap,makespeed(dt_result),dx=5e-3)
-		print('--SKFMM: %.2f sec.' % (time.time() - starttime))
-		print('--initial reconstruction by Fast Marching')
-		alive = fastmarching(img,bimg,size,seed_location[0],seed_location[1],seed_location[2],max_intensity,args.threshold,args.allow_gap,args.out)
-		print('--initial reconstruction finished')
-		print('--FM Total: %.2f sec.' % (time.time() - starttime))
 
-		# starttime2 = time.time()
-		# print('--perform hierarchical pruning')
-		# hp(img,bimg,size,alive,args.out,args.threshold)
-		# print('--APP2 finished')
-		# print('--Pruning: %.2f sec.' % (time.time() - starttime2))
-		# print('--Finished: %.2f sec.' % (time.time() - starttime))
+		# print('--SKFMM: %.2f sec.' % (time.time() - starttime))
+		# print('--initial reconstruction by Fast Marching')
+		# alive = fastmarching(img,bimg,size,seed_location[0],seed_location[1],seed_location[2],max_intensity,args.threshold,args.allow_gap,args.out)
+		# print('--initial reconstruction finished')
+		# print('--FM Total: %.2f sec.' % (time.time() - starttime))
+		alive = np.array([])
+
+		starttime2 = time.time()
+		print('--perform hierarchical pruning')
+		hp(img,bimg,size,alive,args.out,args.threshold)
+		print('--APP2 finished')
+		print('--Pruning: %.2f sec.' % (time.time() - starttime2))
+		print('--Finished: %.2f sec.' % (time.time() - starttime))
 
 		
 

@@ -43,56 +43,6 @@ givals = [
 def GI(w,h,d, img, max_intensity, min_intensity):
     return givals[(int)((img[w][h][d] - min_intensity) /
                         max_intensity * 255)]
-"""
-Insert the vertex into trail_set and keep the phi in the increasing order
-
-Parameters
-----------
-trail_set : the numpy array which contains the all vertex with status TRAIL 
-"""
-def insert(trail_set, phi, new_dist, w,h,d):
-    ind = 0
-    if trail_set.size == 0:
-        trail_set = np.vstack((trail_set, []))
-        # print('after insert: ',trail_set.size)
-        return trail_set
-
-    # print('size: ',trail_set.size)
-    for i in trail_set:
-        if new_dist < phi[i.w][i.h][i.d]:
-            trail_set = np.insert(trail_set, ind, spatial)
-            # print('after insert: ',trail_set.size)
-            return trail_set
-        ind += 1
-    trail_set = np.insert(trail_set, ind, spatial)
-    return trail_set
-
-"""
-adjust the target node location in the trail set according to the updated distance
-
-Parameters
-----------
-trail_set : the numpy array which contains the all vertex with status TRAIL 
-"""
-def find_adjust(trail_set, phi, new_dist, spatial):
-    index = 0
-    for i in trail_set:
-        if (i.w == spatial.w and i.h == spatial.h and i.d == spatial.d):
-            break
-        index += 1
-
-    trail_set = np.delete(trail_set, index)
-
-    ind = 0
-
-    for i in trail_set:
-        if new_dist < phi[i.w][i.h][i.d]:
-            trail_set = np.insert(trail_set, ind, spatial)
-            return trail_set, ind
-        ind += 1
-    trail_set = np.insert(trail_set, ind, spatial)
-    # print('after insert: ',trail_set.size)
-    return
 
 """
 initial tree reconsturction using fast-marching
@@ -101,7 +51,7 @@ initial tree reconsturction using fast-marching
 def fastmarching(img, bimg, size, seed_w, seed_h, seed_d, max_intensity,threshold,
                          allow_gap, out_path):
 
-    starttime = time.time()
+    # starttime = time.time()
     # state 0 for FAR, state 1 for TRAIL, state 2 for ALIVE
     state = np.zeros((size[0], size[1], size[2]))
 
@@ -134,7 +84,10 @@ def fastmarching(img, bimg, size, seed_w, seed_h, seed_d, max_intensity,threshol
     # print(trail_set.size)
     # print(alive_set.size)
     starttime = time.time()
+    totaltime = 0
+    counter = 0
     while (trail_set.size != 0):
+        counter+=1
         # print('size: ',trail_set.shape)
         # if(trail_set.shape[0] == 1):
         #     min_ind = trail_set 
@@ -144,9 +97,9 @@ def fastmarching(img, bimg, size, seed_w, seed_h, seed_d, max_intensity,threshol
         # print('min_ind')
         # print(min_ind)
         trail_set = numpy.delete(trail_set, (0), axis=0)
-        i = min_ind[1]
-        j = min_ind[2]
-        k = min_ind[3]
+        i = int(min_ind[1])
+        j = int(min_ind[2])
+        k = int(min_ind[3])
         prev_ind = prev[i][j][k]
         # if(trail_set.shape[0] == 1):
         #     min_ind = trail_set 
@@ -155,11 +108,14 @@ def fastmarching(img, bimg, size, seed_w, seed_h, seed_d, max_intensity,threshol
 
         state[i][j][k] = 2
         swc_index[i][j][k] = current_index
+        insert_swc = time.time()
         if(alive_set.shape[1] == 0):
             alive_set = np.asarray([[current_index,3,i,j,k,1,0]])
         else:
             alive_set = np.vstack((alive_set,[current_index,3,i,j,k,1,prev_ind]))
         current_index += 1
+        # print('insert takes %.10f sec.' % (time.time()-insert_swc))
+        totaltime+=(time.time()-insert_swc)
 
         for kk in range(-1, 2):
             d = k + kk
@@ -203,8 +159,10 @@ def fastmarching(img, bimg, size, seed_w, seed_h, seed_d, max_intensity,threshol
                             if trail_set.shape[1] == 0:
                                 trail_set = np.vstack((trail_set,[new_dist,w,h,d]))
                             else:
+                                sort_time = time.time()
                                 trail_set = np.vstack((trail_set,[new_dist,w,h,d]))
                                 trail_set[np.argsort(trail_set[:,0])]
+                                # print('insert takes: %.2f',time.time()-sort_time)
 
                             prev[w][h][d] = prev_ind
                             state[w][h][d] = 1
@@ -216,16 +174,12 @@ def fastmarching(img, bimg, size, seed_w, seed_h, seed_d, max_intensity,threshol
                                 temp_ind = np.argwhere((trail_set[:,1] == w) & (trail_set[:,2] == h) & (trail_set[:,3] == d))[0]
                                 trail_set[temp_ind][0] = new_dist
                                 trail_set[np.argsort(trail_set[:,0])]
-                                # result = find_adjust(trail_set, phi, new_dist,
-                                #                      spatial_index)
-                                # trail_set = result[0]
-
-                                # not sure what trail index does
-                                # trail_index[w][h][d] = result[1]
+                                sort_time = time.time()
+                                # print('adjust takes: %.2f',time.time()-sort_time)
                                 prev[w][h][d] = prev_ind
 
-
-
+    print(totaltime)
+    print(counter)
     print('--FM finished')
     print('--Fast Marching: %.2f sec.' % (time.time() - starttime))
 
@@ -234,9 +188,9 @@ def fastmarching(img, bimg, size, seed_w, seed_h, seed_d, max_intensity,threshol
     swc_y = alive_set[:, 3].copy()
     alive_set[:, 2] = swc_y
     alive_set[:, 3] = swc_x
-    saveswc(out_path + 'updated_fm_result',alive_set)
+    saveswc(out_path + 'new_fm_ini.swc',alive_set)
     # print('--Start: %.2f sec.' % (starttime))
     print('--Store ini_swc: %.2f sec.' % (time.time() - starttime))
     # print('--FM finished')
 
-    return alive
+    return alive_set

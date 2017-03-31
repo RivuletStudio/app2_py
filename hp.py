@@ -67,7 +67,7 @@ def hp(img,bimg,size,alive,out,threshold):
             else:
                 seg_swc.append([i.index, color, i.w, i.h, i.d, i.radius, i.parent.index])
 
-        print(index)
+        # print(index)
         index+=1
 
     seg_swc = np.asarray(seg_swc)
@@ -103,9 +103,9 @@ def swc2topo_segs(img,size,alive,out,threshold):
 
         index += 1
 
-    print('leaf_size: ', leaf_nodes.size)
+    # print('leaf_size: ', leaf_nodes.size)
 
-    print('child no of index 31: ', child_no[0])
+    # print('child no of index 31: ', child_no[0])
 
     count = 0
     for i in alive:
@@ -114,7 +114,7 @@ def swc2topo_segs(img,size,alive,out,threshold):
         elif i.parent.index == 0:
             # print(i.w,i.h,i.d)
             count += 1
-    print('child no of index 31: ', count)
+    # print('child no of index 31: ', count)
 
     leaf_num = leaf_nodes.size
 
@@ -150,10 +150,10 @@ def swc2topo_segs(img,size,alive,out,threshold):
 
     fp = np.argmax(topo_dists)
     fn = topo_leafs[fp]
-    print('furthest point location: ', fn.w, fn.h, fn.d, 'index: ',fp,'length: ',
-          topo_dists[fp])
-    print('seed topo to this point: ', topo_leafs[0].w, topo_leafs[0].h,
-          topo_leafs[0].d, topo_dists[0])
+    # print('furthest point location: ', fn.w, fn.h, fn.d, 'index: ',fp,'length: ',
+          # topo_dists[fp])
+    # print('seed topo to this point: ', topo_leafs[0].w, topo_leafs[0].h,
+          # topo_leafs[0].d, topo_dists[0])
 
     topo_segs = np.empty(leaf_num, dtype=segment)
 
@@ -181,18 +181,18 @@ def swc2topo_segs(img,size,alive,out,threshold):
             topo_seg.parent = topo_segs[loc[0][0]]
         index += 1
 
-    complete_segment(topo_dists, topo_leafs,alive,leaf_nodes,topo_segs,out)
+    # complete_segment(topo_dists, topo_leafs,alive,leaf_nodes,topo_segs,out)
 
     filter_segs = np.array([])
-    print('Current Segments size:  ',topo_segs.size)
-    print('--Prune by length threhold')
+    # print('Current Segments size:  ',topo_segs.size)
+    # print('--Prune by length threhold')
 
     for seg in topo_segs:
         # seg_length = np.append(seg_length,seg.length)
         if seg.length > 4:
             filter_segs = np.append(filter_segs, seg)
 
-    print('Current Segments size:  ',filter_segs.size)
+    # print('Current Segments size:  ',filter_segs.size)
     # for i in topo_segs:
     #     if(i.parent is None):
             # print('lolxx')
@@ -239,8 +239,8 @@ def hierchical_coverage_prune(filter_segs,img,out):
         
         coverage = overlap / tol_num
         
-        if sort_index == 79 or sort_index == 141 or sort_index == 154 or sort_index == 229:
-            print("== Seg coverage:", overlap, tol_num,coverage)
+        # if sort_index == 79 or sort_index == 141 or sort_index == 154 or sort_index == 229:
+            # print("== Seg coverage:", overlap, tol_num,coverage)
         if (coverage < 0.5):
             result_segs.append(seg)
             seg_index+=1
@@ -262,7 +262,7 @@ def hierchical_coverage_prune(filter_segs,img,out):
             current = current.parent
         sort_index+=1
     filtered_result_segs = result_segs  
-    print(len(filtered_result_segs))
+    # print(len(filtered_result_segs))
     # filtered_result_segs = []
 
     # TODO: Not sure if it works!
