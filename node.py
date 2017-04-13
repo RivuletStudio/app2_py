@@ -9,7 +9,7 @@ class spatial:
         self.index = None
         self.radius = 1
 
-class segment_old():
+class segment():
 	def __init__(self, leaf, root, length, level):
 		self.leaf = leaf
 		self.root = root
@@ -41,7 +41,7 @@ class segment_old():
 
 		return out_swc
 
-class segment():
+class segment_notused():
 	def __init__(self, leaf, root, length, level):
 		self.leaf = leaf
 		self.root = root

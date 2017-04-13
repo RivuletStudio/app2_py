@@ -117,6 +117,7 @@ def swc2topo_segs(img,size,alive,out,threshold):
     # print('child no of index 31: ', count)
 
     leaf_num = leaf_nodes.size
+    print('leaf size', leaf_num)
 
 
 
@@ -150,10 +151,10 @@ def swc2topo_segs(img,size,alive,out,threshold):
 
     fp = np.argmax(topo_dists)
     fn = topo_leafs[fp]
-    # print('furthest point location: ', fn.w, fn.h, fn.d, 'index: ',fp,'length: ',
-          # topo_dists[fp])
-    # print('seed topo to this point: ', topo_leafs[0].w, topo_leafs[0].h,
-          # topo_leafs[0].d, topo_dists[0])
+    print('furthest point location: ', fn.w, fn.h, fn.d, 'index: ',fp,'length: ',
+          topo_dists[fp])
+    print('seed topo to this point: ', topo_leafs[0].w, topo_leafs[0].h,
+          topo_leafs[0].d, topo_dists[0])
 
     topo_segs = np.empty(leaf_num, dtype=segment)
 

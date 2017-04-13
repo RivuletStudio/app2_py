@@ -10,7 +10,7 @@ import skfmm
 np.set_printoptions(threshold=np.inf)
 
 def main():
-	parser = argparse.ArgumentParser(description='Arguments for see anisotropic filters.')
+	parser = argparse.ArgumentParser(description='Arguments for app2_py.')
 	parser.add_argument('--file', type=str, default=None, required=True, help='The path of input file')
 	parser.add_argument('--out', type=str, default=None, required=True, help='The out path of output swc')
 	parser.add_argument('--threshold', type=float, default=-1, help='threshold to distinguish the foreground and background; works on filtered image if --filter is enabled')
@@ -41,7 +41,7 @@ def main():
 	img = loadimg(args.file)
 
 	print('--crop image')
-	img = crop(img,args.threshold)[0]
+	# img = crop(img,args.threshold)[0]
 	print('--save crop image')
 	# writetiff3d(args.out+'crop.tif',img)
 	size = img.shape
@@ -65,12 +65,12 @@ def main():
 		# marchmap[seed_location[0]][seed_location[1]][seed_location[2]] = -1
 		# t = skfmm.travel_time(marchmap,makespeed(dt_result),dx=5e-3)
 
-		# print('--SKFMM: %.2f sec.' % (time.time() - starttime))
-		# print('--initial reconstruction by Fast Marching')
-		# alive = fastmarching(img,bimg,size,seed_location[0],seed_location[1],seed_location[2],max_intensity,args.threshold,args.allow_gap,args.out)
-		# print('--initial reconstruction finished')
-		# print('--FM Total: %.2f sec.' % (time.time() - starttime))
-		alive = np.array([])
+		print('--SKFMM: %.2f sec.' % (time.time() - starttime))
+		print('--initial reconstruction by Fast Marching')
+		alive = fastmarching(img,bimg,size,seed_location[0],seed_location[1],seed_location[2],max_intensity,args.threshold,args.allow_gap,args.out)
+		print('--initial reconstruction finished')
+		print('--FM Total: %.2f sec.' % (time.time() - starttime))
+		# alive = np.array([])
 
 		starttime2 = time.time()
 		print('--perform hierarchical pruning')
