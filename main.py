@@ -67,7 +67,7 @@ def main():
 
 		print('--SKFMM: %.2f sec.' % (time.time() - starttime))
 		print('--initial reconstruction by Fast Marching')
-		alive = fastmarching(img,bimg,size,seed_location[0],seed_location[1],seed_location[2],max_intensity,args.threshold,args.allow_gap,args.out)
+		alive = fastmarching(img,bimg,size,seed_location[0],seed_location[1],seed_location[2],max_intensity,args.threshold,args.out)
 		print('--initial reconstruction finished')
 		print('--FM Total: %.2f sec.' % (time.time() - starttime))
 		# alive = np.array([])
